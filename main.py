@@ -7,6 +7,7 @@ from apps.specialists.router import router as specialists_router
 from apps.users.router import router as auth_router
 from core import settings
 from core.db import DBSession
+from core.exceptions import register_exception_handlers
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -14,6 +15,8 @@ app = FastAPI(
     docs_url='/api/docs',
     openapi_url='/api/openapi.json',
 )
+
+register_exception_handlers(app)
 
 app.add_middleware(
     CORSMiddleware,

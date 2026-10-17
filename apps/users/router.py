@@ -1,6 +1,8 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
+from core import settings
 from core.db import DBSession
+from core.rate_limit import RateLimiter
 from core.security import create_access_token, create_refresh_token, decode_token
 
 from . import services
@@ -10,12 +12,19 @@ from .schemas import LoginRequest, RefreshRequest, TokenPair, UserCreate, UserRe
 
 router = APIRouter(prefix='/auth', tags=['auth'])
 
+auth_limiter = RateLimiter(times=settings.AUTH_RATE_LIMIT, seconds=60)
+
 
 def make_tokens(user_id: int) -> TokenPair:
     return TokenPair(access=create_access_token(user_id), refresh=create_refresh_token(user_id))
 
 
-@router.post('/register', response_model=UserRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    '/register',
+    response_model=UserRead,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(auth_limiter)],
+)
 async def register(data: UserCreate, db: DBSession):
     try:
         return await services.create_user(db, data)
@@ -23,7 +32,7 @@ async def register(data: UserCreate, db: DBSession):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Email is already registered') from None
 
 
-@router.post('/login', response_model=TokenPair)
+@router.post('/login', response_model=TokenPair, dependencies=[Depends(auth_limiter)])
 async def login(data: LoginRequest, db: DBSession):
     user = await services.authenticate(db, data.email, data.password)
     if user is None:
