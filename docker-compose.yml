@@ -15,5 +15,18 @@ services:
       timeout: 3s
       retries: 10
 
+  web:
+    build: .
+    command: sh -c "alembic upgrade head && gunicorn main:app --worker-class uvicorn_worker.UvicornWorker --workers 3 --bind 0.0.0.0:8000"
+    env_file: .env
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+    ports:
+      - "8001:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
 volumes:
   postgres_data:
