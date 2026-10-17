@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
+from apps.specialists.router import router as specialists_router
 from apps.users.router import router as auth_router
 from core import settings
 from core.db import DBSession
@@ -29,3 +30,4 @@ async def health(db: DBSession):
 
 
 app.include_router(auth_router, prefix='/api/v1')
+app.include_router(specialists_router, prefix='/api/v1')
