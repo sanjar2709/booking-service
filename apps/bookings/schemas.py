@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
@@ -45,3 +45,10 @@ class BookingRead(BaseModel):
 
 class BookingStatusUpdate(BaseModel):
     status: BookingStatus
+
+
+class SlotsRead(BaseModel):
+    date: date
+    service_id: int
+    duration_minutes: int
+    slots: list[datetime]

@@ -3,12 +3,13 @@ from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query, status
 
+from apps.specialists.models import Service
 from apps.users.dependencies import AdminUser, CurrentUser
 from core.db import DBSession
 
 from . import services
 from .models import Booking, BookingStatus
-from .schemas import BookingCreate, BookingRead, BookingStatusUpdate
+from .schemas import BookingCreate, BookingRead, BookingStatusUpdate, SlotsRead
 
 router = APIRouter(tags=['bookings'])
 
@@ -19,6 +20,16 @@ async def get_booking_for(db, booking_id: int, user) -> Booking:
     if booking is None or (booking.user_id != user.id and not user.is_admin):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Booking not found')
     return booking
+
+
+@router.get('/specialists/{specialist_id}/slots', response_model=SlotsRead)
+async def free_slots(specialist_id: int, service_id: int, day: Annotated[date, Query(alias='date')], db: DBSession):
+    try:
+        slots = await services.get_free_slots(db, specialist_id, service_id, day)
+    except services.BookingError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from None
+    service = await db.get(Service, service_id)
+    return SlotsRead(date=day, service_id=service_id, duration_minutes=service.duration_minutes, slots=slots)
 
 
 @router.post('/bookings', response_model=BookingRead, status_code=status.HTTP_201_CREATED)

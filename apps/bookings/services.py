@@ -45,6 +45,39 @@ def fits_working_hours(specialist: Specialist, starts_at: datetime, ends_at: dat
     return hours is not None and hours.start_time <= start.time() and end.time() <= hours.end_time
 
 
+async def get_free_slots(db: AsyncSession, specialist_id: int, service_id: int, day: date) -> list[datetime]:
+    """Start times on the given day when the service fits into working hours and doesn't clash with a booking."""
+    specialist, service = await get_bookable(db, specialist_id, service_id)
+
+    hours = next((h for h in specialist.working_hours if h.weekday == day.weekday()), None)
+    if hours is None or day > now().date() + timedelta(days=settings.BOOKING_WINDOW_DAYS):
+        return []
+
+    day_start = datetime.combine(day, hours.start_time, TZ)
+    day_end = datetime.combine(day, hours.end_time, TZ)
+    busy = list(await db.execute(
+        select(Booking.starts_at, Booking.ends_at).where(
+            Booking.specialist_id == specialist_id,
+            Booking.status != BookingStatus.CANCELLED,
+            Booking.starts_at < day_end,
+            Booking.ends_at > day_start,
+        )
+    ))
+
+    duration = timedelta(minutes=service.duration_minutes)
+    step = timedelta(minutes=settings.SLOT_STEP_MINUTES)
+    current_time = now()
+
+    slots = []
+    start = day_start
+    while start + duration <= day_end:
+        end = start + duration
+        if start > current_time and not any(start < b_end and end > b_start for b_start, b_end in busy):
+            slots.append(start)
+        start += step
+    return slots
+
+
 async def create_booking(db: AsyncSession, user: User, data: BookingCreate) -> Booking:
     specialist, service = await get_bookable(db, data.specialist_id, data.service_id)
 
