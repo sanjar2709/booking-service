@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from core import settings
 from core.db import Base
+from core.models import *  # noqa: F403  (registers all models on Base.metadata)
 
 config = context.config
 config.set_main_option('sqlalchemy.url', settings.DATABASE_URL)
