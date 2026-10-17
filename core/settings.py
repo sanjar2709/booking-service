@@ -23,6 +23,12 @@ REFRESH_TOKEN_LIFETIME_DAYS = int(os.getenv('REFRESH_TOKEN_LIFETIME_DAYS', 7))
 
 TIME_ZONE = 'Asia/Tashkent'
 
+# Bookings
+
+BOOKING_WINDOW_DAYS = int(os.getenv('BOOKING_WINDOW_DAYS', 60))
+CANCEL_DEADLINE_HOURS = int(os.getenv('CANCEL_DEADLINE_HOURS', 2))
+SLOT_STEP_MINUTES = int(os.getenv('SLOT_STEP_MINUTES', 15))
+
 # Database
 
 DB_NAME = os.getenv('DB_NAME')
