@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
 from core import settings
+from core.db import DBSession
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -20,5 +22,6 @@ app.add_middleware(
 
 
 @app.get('/api/health', tags=('health',))
-async def health():
-    return {'status': 'ok'}
+async def health(db: DBSession):
+    await db.execute(text('SELECT 1'))
+    return {'status': 'ok', 'database': 'ok'}
